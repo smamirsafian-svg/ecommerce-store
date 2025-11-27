@@ -18,7 +18,7 @@ async function login(formData: FormData) {
   const email = formData.get("email") as string
   const password = formData.get("password") as string
 
-  const supabase = await createSupabaseServerClient()
+  const supabase = createSupabaseServerClient()
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -39,7 +39,7 @@ async function sendMagicLink(formData: FormData) {
 
   if (!email) return redirect("/auth/login?error=لطفاً ایمیل خود را برای لینک جادویی وارد کنید")
 
-  const supabase = await createSupabaseServerClient()
+  const supabase = createSupabaseServerClient()
 
   const { error } = await supabase.auth.signInWithOtp({
     email,
@@ -55,11 +55,12 @@ async function sendMagicLink(formData: FormData) {
   return redirect("/auth/login?message=لینک ورود به ایمیل شما ارسال شد")
 }
 
-export default function LoginPage({
-  searchParams,
-}: {
-  searchParams?: { error?: string; message?: string }
-}) {
+export default async function LoginPage({ searchParams }) {
+  const params = await searchParams
+
+  const error = params?.error
+  const message = params?.message
+
   return (
     <Card className="w-full">
       <CardHeader className="text-right space-y-1">
@@ -70,14 +71,14 @@ export default function LoginPage({
       </CardHeader>
       <CardContent>
         <form action={login} className="space-y-4">
-          {searchParams?.error && (
+          {error && (
             <div className="mt-2 text-sm text-red-600 text-right">
-              {searchParams.error}
+              {error}
             </div>
           )}
-          {searchParams?.message && (
+          {message && (
             <div className="mt-2 text-sm text-green-600 text-right">
-              {searchParams.message}
+              {message}
             </div>
           )}
           <div className="space-y-2">

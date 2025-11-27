@@ -24,7 +24,7 @@ async function signup(formData: FormData) {
     redirect(`/auth/signup?error=${encodeURIComponent("رمز عبور و تأیید آن یکسان نیست")}`)
   }
 
-  const supabase = await createSupabaseServerClient()
+  const supabase = createSupabaseServerClient()
 
   const { error } = await supabase.auth.signUp({
     email,
@@ -52,11 +52,12 @@ async function signup(formData: FormData) {
   redirect("/")
 }
 
-export default function SignupPage({
-  searchParams,
-}: {
-  searchParams?: { error?: string }
-}) {
+export default async function SignupPage({ searchParams }) {
+  const params = await searchParams
+
+  const error = params?.error
+  const message = params?.message
+
   return (
     <Card className="w-full">
       <CardHeader className="text-right space-y-1">
@@ -67,9 +68,9 @@ export default function SignupPage({
       </CardHeader>
       <CardContent>
         <form action={signup} className="space-y-4">
-          {searchParams?.error && (
+          {error && (
             <div className="mt-2 text-sm text-red-600 text-right">
-              {searchParams.error}
+              {error}
             </div>
           )}
           <div className="space-y-2">
