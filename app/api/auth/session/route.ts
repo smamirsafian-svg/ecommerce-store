@@ -1,11 +1,31 @@
-import { NextResponse } from "next/server"
+import { getServerSupabase } from "@/lib/supabase/server";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { NextResponse } from "next/server";
+
+
 
 export async function GET() {
-  const supabase = createSupabaseServerClient()
-  const { data: { session } } = await supabase.auth.getSession()
 
-  return NextResponse.json({ session })
+  const supabase = await getServerSupabase();
+
+
+
+  const { data: { user }, error } = await supabase.auth.getUser();
+
+
+
+  if (error || !user) {
+
+    return NextResponse.json({ session: null });
+
+  }
+
+
+
+  return NextResponse.json({
+
+    session: { user },
+
+  });
+
 }
-

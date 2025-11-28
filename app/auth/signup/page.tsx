@@ -10,7 +10,7 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card"
-import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { getServerSupabase } from "@/lib/supabase/server"
 
 async function signup(formData: FormData) {
   "use server"
@@ -21,10 +21,10 @@ async function signup(formData: FormData) {
   const confirmPassword = formData.get("confirmPassword") as string
 
   if (password !== confirmPassword) {
-    redirect(`/auth/signup?error=${encodeURIComponent("رمز عبور و تأیید آن یکسان نیست")}`)
+    redirect(`/auth/signup?error=password_mismatch`)
   }
 
-  const supabase = createSupabaseServerClient()
+  const supabase = getServerSupabase()
 
   const { error } = await supabase.auth.signUp({
     email,
@@ -37,16 +37,16 @@ async function signup(formData: FormData) {
   })
 
   if (error) {
-    // Map common Supabase errors to Farsi messages
-    let errorMessage = "خطا در ثبت‌نام. لطفاً دوباره تلاش کنید."
+    // Map common Supabase errors to error codes
+    let errorCode = "signup_failed"
     if (error.message.includes("already registered") || error.message.includes("already exists")) {
-      errorMessage = "این ایمیل قبلاً ثبت‌نام شده است"
+      errorCode = "email_already_exists"
     } else if (error.message.includes("invalid email")) {
-      errorMessage = "ایمیل وارد شده معتبر نیست"
+      errorCode = "invalid_email"
     } else if (error.message.includes("password")) {
-      errorMessage = "رمز عبور باید حداقل ۶ کاراکتر باشد"
+      errorCode = "password_too_short"
     }
-    redirect(`/auth/signup?error=${encodeURIComponent(errorMessage)}`)
+    redirect(`/auth/signup?error=${errorCode}`)
   }
 
   redirect("/")

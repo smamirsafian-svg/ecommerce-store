@@ -10,7 +10,7 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card"
-import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { getServerSupabase } from "@/lib/supabase/server"
 
 async function login(formData: FormData) {
   "use server"
@@ -18,7 +18,7 @@ async function login(formData: FormData) {
   const email = formData.get("email") as string
   const password = formData.get("password") as string
 
-  const supabase = createSupabaseServerClient()
+  const supabase = await getServerSupabase()
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -26,7 +26,7 @@ async function login(formData: FormData) {
   })
 
   if (error) {
-    redirect(`/auth/login?error=${encodeURIComponent("ایمیل یا رمز عبور نادرست است")}`)
+    redirect("/auth/login?error=invalid_credentials")
   }
 
   redirect("/")
@@ -37,22 +37,24 @@ async function sendMagicLink(formData: FormData) {
 
   const email = String(formData.get("magic_email") || "").trim()
 
-  if (!email) return redirect("/auth/login?error=لطفاً ایمیل خود را برای لینک جادویی وارد کنید")
+  if (!email) return redirect("/auth/login?error=missing_email")
 
-  const supabase = createSupabaseServerClient()
+  // Call signInWithOtp directly in the server action so cookies are set
+  // in the browser's context, not in an internal API route fetch
+  const supabase = await getServerSupabase()
 
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: process.env.NEXT_PUBLIC_BASE_URL
-        ? `${process.env.NEXT_PUBLIC_BASE_URL}/`
-        : "/",
+      emailRedirectTo: process.env.NEXT_PUBLIC_BASE_URL + "/auth/callback",
     },
   })
 
-  if (error) return redirect("/auth/login?error=ارسال لینک جادویی با خطا مواجه شد")
+  if (error) {
+    return redirect(`/auth/login?error=${encodeURIComponent(error.message)}`)
+  }
 
-  return redirect("/auth/login?message=لینک ورود به ایمیل شما ارسال شد")
+  return redirect("/auth/login?message=magic_link_sent")
 }
 
 export default async function LoginPage({ searchParams }) {
